@@ -4,10 +4,11 @@ function initBuffers(gl) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-    const positions = [-1.0, -1.0, 0.0, -1.0, 1.0, 0.0,
+    const positions = [-1.0, -1.0, 1.0, -1.0, 1.0, 0.0,
         1.0, -1.0, 0.0, -1.0, 1.0, 0.0,
         1.0, -1.0, 0.0,
-        1.0, 1.0, 0.0
+        1.0, 1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0, 0.0,
+        1.0, -1.0, 0.0,
     ];
 
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
@@ -19,6 +20,9 @@ function initBuffers(gl) {
         0.0, 0.0, 1.0, 1.0, // blue
         1.0, 1.0, 1.0, 1.0, // white
         1.0, 0.0, 0.0, 1.0, // red
+        0.0, 0.0, 1.0, 1.0, // blue
+        1.0, 1.0, 1.0, 1.0, // white
+        1.0, 0.0, 0.0, 1.0,
     ];
 
     const colorBuffer = gl.createBuffer();
@@ -201,7 +205,7 @@ function drawScene(gl, program_info, buffers, dt) {
 
     {
         const offset = 0;
-        const vertexCount = 6;
+        const vertexCount = 9;
         gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
     }
 

@@ -1,5 +1,5 @@
-var rows = 30;
-var columns = 30;
+var rows = 300;
+var columns = 300;
 
 var triangle_width = 2 / rows;
 
@@ -11,6 +11,8 @@ var vertex_colors = [];
 
 var shift_x = -1;
 var shift_y = -1;
+
+var terrain_map = new Array(rows + 1);
 
 function generateTriangles() {
 
@@ -43,18 +45,18 @@ function generateTriangles() {
                     break;
             }
             count++;
-            var point_A = { y: row, x: column };
-            var point_B = { y: row, x: column + triangle_width };
-            var point_C = { y: row + triangle_width, x: column };
-            var point_D = { y: row + triangle_width, x: column + triangle_width };
+            var point_A = { x: column * triangle_width + shift_x, y: row * triangle_width + shift_y, z: terrain_map[row][column] };
+            var point_B = { x: column * triangle_width + shift_x + triangle_width, y: row * triangle_width + shift_y, z: terrain_map[row][column + 1] };
+            var point_C = { x: column * triangle_width + shift_x, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column] };
+            var point_D = { x: column * triangle_width + shift_x + triangle_width, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column + 1] };
 
-            mesh_vertices.push(column * triangle_width + shift_y, row * triangle_width + shift_x, 0);
-            mesh_vertices.push(column * triangle_width + shift_y, row * triangle_width + triangle_width + shift_x, 0);
-            mesh_vertices.push(column * triangle_width + triangle_width + shift_y, row * triangle_width + shift_x, 0);
+            mesh_vertices.push(point_A.x, point_A.y, point_A.z);
+            mesh_vertices.push(point_B.x, point_B.y, point_B.z);
+            mesh_vertices.push(point_C.x, point_C.y, point_C.z);
 
-            mesh_vertices.push(column * triangle_width + triangle_width + shift_y, row * triangle_width + triangle_width + shift_x, 0);
-            mesh_vertices.push(column * triangle_width + shift_y, row * triangle_width + triangle_width + shift_x, 0);
-            mesh_vertices.push(column * triangle_width + triangle_width + shift_y, row * triangle_width + shift_x, 0);
+            mesh_vertices.push(point_D.x, point_D.y, point_D.z);
+            mesh_vertices.push(point_B.x, point_B.y, point_B.z);
+            mesh_vertices.push(point_C.x, point_C.y, point_C.z);
 
             vertex_colors.push(r, g, b, 1.0);
             vertex_colors.push(r, g, b, 1.0);
@@ -95,7 +97,25 @@ function generateTriangles() {
 }
 
 
+function generateTerrain() {
 
+    for (var i = 0; i < terrain_map.length; i++) {
+
+        terrain_map[i] = new Array(columns + 1);
+
+    }
+
+    var simplex = new SimplexNoise();
+
+    for (var row = 0; row < terrain_map.length; row++) {
+        for (var column = 0; column < terrain_map[row].length; column++) {
+
+            terrain_map[row][column] = simplex.noise2D(column * 0.01, row * 0.01) * 0.2;
+
+        }
+    }
+
+}
 
 
 
@@ -211,6 +231,7 @@ function main() {
             projectionMatrix: gl.getUniformLocation(program, 'perspectiveMatrix'),
         }
     }
+    generateTerrain();
     generateTriangles();
     const buffers = initBuffers(gl);
 

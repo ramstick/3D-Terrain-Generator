@@ -1,18 +1,40 @@
-var rows = 300;
-var columns = 300;
+var rows = 180;
+var columns = 180;
 
-var triangle_width = 2 / rows;
+var triangle_width = 20 / rows;
 
 var num_points = rows * columns * 6;
 
-var mesh_triangles = [];
+var vertex_normals = [];
 var mesh_vertices = [];
 var vertex_colors = [];
 
-var shift_x = -1;
-var shift_y = -1;
+var shift_x = -10;
+var shift_y = -10;
 
 var terrain_map = new Array(rows + 1);
+
+function cross_product(v1, v2) {
+
+    return {
+        x: (v1.y * v2.z) - (v1.z * v2.y),
+        y: (v1.z * v2.x) - (v1.x * v2.z),
+        z: (v1.x * v2.y) - (v1.y * v2.x),
+    }
+
+}
+
+function normalize_vector(v) {
+
+    var l = Math.sqrt((v.x) ** 2 + (v.y) ** 2 + (v.z) ** 2);
+
+    return {
+        x: v.x / l,
+        y: v.y / l,
+        z: v.z / l,
+    }
+
+}
 
 function generateTriangles() {
 
@@ -21,75 +43,71 @@ function generateTriangles() {
     for (var column = 0; column < columns; column++) {
         for (var row = 0; row < rows; row++) {
 
-            var r = 0.0,
-                g = 0.0,
-                b = 0.0;
 
-            switch (count % 5) {
-                case 0:
-                    r = 255.0;
-                    break;
-                case 1:
-                    g = 255.0;
-                    break;
-                case 2:
-                    b = 255.0;
-                    break;
-                case 3:
-                    r = 255.0;
-                    g = 255.0;
-                    break;
-                case 4:
-                    b = 255.0;
-                    g = 255.0;
-                    break;
-            }
-            count++;
             var point_A = { x: column * triangle_width + shift_x, y: row * triangle_width + shift_y, z: terrain_map[row][column] };
             var point_B = { x: column * triangle_width + shift_x + triangle_width, y: row * triangle_width + shift_y, z: terrain_map[row][column + 1] };
             var point_C = { x: column * triangle_width + shift_x, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column] };
             var point_D = { x: column * triangle_width + shift_x + triangle_width, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column + 1] };
 
+            var vector_A_B = { x: point_B.x - point_A.x, y: point_B.y - point_A.y, z: point_B.z - point_A.z };
+            var vector_A_C = { x: point_C.x - point_A.x, y: point_C.y - point_A.y, z: point_C.z - point_A.z };
+
+            var triangle_1_NORMAL = normalize_vector(cross_product(vector_A_B, vector_A_C));
+
+            var vector_D_B = { x: point_B.x - point_D.x, y: point_B.y - point_D.y, z: point_B.z - point_D.z };
+            var vector_D_C = { x: point_C.x - point_D.x, y: point_C.y - point_D.y, z: point_C.z - point_D.z };
+
+            var triangle_2_NORMAL = normalize_vector(cross_product(vector_D_C, vector_D_B));
+
+
+            // Triangle 1
             mesh_vertices.push(point_A.x, point_A.y, point_A.z);
             mesh_vertices.push(point_B.x, point_B.y, point_B.z);
             mesh_vertices.push(point_C.x, point_C.y, point_C.z);
 
+            // Normal 1
+            vertex_normals.push(triangle_1_NORMAL.x, triangle_1_NORMAL.y, triangle_1_NORMAL.z);
+            vertex_normals.push(triangle_1_NORMAL.x, triangle_1_NORMAL.y, triangle_1_NORMAL.z);
+            vertex_normals.push(triangle_1_NORMAL.x, triangle_1_NORMAL.y, triangle_1_NORMAL.z);
+
+            // Triangle 2
             mesh_vertices.push(point_D.x, point_D.y, point_D.z);
             mesh_vertices.push(point_B.x, point_B.y, point_B.z);
             mesh_vertices.push(point_C.x, point_C.y, point_C.z);
 
-            vertex_colors.push(r, g, b, 1.0);
-            vertex_colors.push(r, g, b, 1.0);
-            vertex_colors.push(r, g, b, 1.0);
+            // Normal 2
+            vertex_normals.push(triangle_2_NORMAL.x, triangle_2_NORMAL.y, triangle_2_NORMAL.z);
+            vertex_normals.push(triangle_2_NORMAL.x, triangle_2_NORMAL.y, triangle_2_NORMAL.z);
+            vertex_normals.push(triangle_2_NORMAL.x, triangle_2_NORMAL.y, triangle_2_NORMAL.z);
 
-            var r = 0.0,
-                g = 0.0,
-                b = 0.0;
-
-            switch (count % 5) {
-                case 0:
-                    r = 255.0;
-                    break;
-                case 1:
-                    g = 255.0;
-                    break;
-                case 2:
-                    b = 255.0;
-                    break;
-                case 3:
-                    r = 255.0;
-                    g = 255.0;
-                    break;
-                case 4:
-                    b = 255.0;
-                    g = 255.0;
-                    break;
+            if ((point_A.z + point_B.z + point_C.z) / 3 > 0.6) {
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+            } else if ((point_A.z + point_B.z + point_C.z) / 3 > 0.1) {
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+            } else {
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
             }
-            count++;
 
-            vertex_colors.push(r, g, b, 1.0);
-            vertex_colors.push(r, g, b, 1.0);
-            vertex_colors.push(r, g, b, 1.0);
+            if ((point_D.z + point_B.z + point_C.z) / 3 > 0.6) {
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
+            } else if ((point_D.z + point_B.z + point_C.z) / 3 > 0.1) {
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
+            } else {
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
+                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
+            }
+
         }
     }
 
@@ -110,7 +128,17 @@ function generateTerrain() {
     for (var row = 0; row < terrain_map.length; row++) {
         for (var column = 0; column < terrain_map[row].length; column++) {
 
-            terrain_map[row][column] = simplex.noise2D(column * 0.01, row * 0.01) * 0.2;
+            terrain_map[row][column] = simplex.noise2D(column * 0.1, row * 0.1) * 0.5;
+
+        }
+    }
+
+    simplex = new SimplexNoise();
+
+    for (var row = 0; row < terrain_map.length; row++) {
+        for (var column = 0; column < terrain_map[row].length; column++) {
+
+            terrain_map[row][column] += simplex.noise2D(column * 0.005, row * 0.005) * 0.1;
 
         }
     }
@@ -137,39 +165,20 @@ function initBuffers(gl) {
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-    /*const positions = [-1.0, -1.0, 1.0, -1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0, -1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-        1.0, 1.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0, 0.0,
-        1.0, -1.0, 0.0,
-    ];
-
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);*/
-
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh_vertices), gl.STATIC_DRAW);
-    //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 0, -1, 1, 0, 1, -1, 0, 1, 1, 0, 1, -1, 0, -1, 1, 0]), gl.STATIC_DRAW);
 
     const colorBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-    /*const colors = [
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 0.0, 0.0, 1.0, // red
-        0.0, 1.0, 0.0, 1.0, // green
-        0.0, 0.0, 1.0, 1.0, // blue
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 0.0, 0.0, 1.0, // red
-        0.0, 0.0, 1.0, 1.0, // blue
-        1.0, 1.0, 1.0, 1.0, // white
-        1.0, 0.0, 0.0, 1.0,
-    ];
-
-    
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);*/
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertex_colors), gl.STATIC_DRAW);
-    //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([255, 0, 0, 1, 255, 0, 0, 1, 255, 0, 0, 1, 0, 255, 0, 1, 0, 255, 0, 1, 0, 255, 0, 1]), gl.STATIC_DRAW);
+
+    const normalBuffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertex_normals), gl.STATIC_DRAW);
 
     return {
         position: positionBuffer,
+        normal: normalBuffer,
         color: colorBuffer,
     };
 
@@ -182,15 +191,28 @@ var v_s_source = `
 
     attribute vec4 a_pos;
     attribute vec4 a_col;
+    attribute vec4 a_nor;
 
     varying vec4 v_col;
+    varying vec3 lighting;
 
     uniform mat4 modelViewMatrix;
     uniform mat4 perspectiveMatrix;
+    uniform vec4 directional_light;
+    uniform mat4 normalMatrix;
 
     void main(){
         gl_Position = perspectiveMatrix * modelViewMatrix * a_pos;
         v_col = a_col;
+
+
+        highp vec4 transformedNormal = normalMatrix * vec4(a_nor.xyz, 1.0);
+
+        highp vec3 color = vec3(1.5,1.5,1.5);
+
+        highp float directional = max(dot(transformedNormal.xyz, directional_light.xyz), 0.2);
+        lighting = color * directional + 0.3;
+        //lighting = a_nor.x + a_nor.y + a_nor.z;
     }
 
 `;
@@ -199,9 +221,10 @@ var f_s_source = `
     precision mediump float;
 
     varying vec4 v_col;
+    varying vec3 lighting;
 
     void main(){
-        gl_FragColor = v_col;
+        gl_FragColor = vec4((v_col.xyz * lighting), 1.0);
     }
 
 `
@@ -225,10 +248,13 @@ function main() {
         attribLocations: {
             vertexPosition: gl.getAttribLocation(program, 'a_pos'),
             vertexColor: gl.getAttribLocation(program, 'a_col'),
+            vertexNormal: gl.getAttribLocation(program, 'a_nor'),
         },
         uniformLocations: {
             modelViewMatrix: gl.getUniformLocation(program, 'modelViewMatrix'),
             projectionMatrix: gl.getUniformLocation(program, 'perspectiveMatrix'),
+            lightingVector: gl.getUniformLocation(program, 'directional_light'),
+            normalMatrix: gl.getUniformLocation(program, 'normalMatrix'),
         }
     }
     generateTerrain();
@@ -290,6 +316,14 @@ function drawScene(gl, program_info, buffers, dt) {
     mat4.rotateZ(modelViewMatrix, modelViewMatrix, rot);
     rot += dt * 1;
 
+    const lightingVector = vec4.fromValues(Math.sqrt(3) / 2, 1 / 2, 0, 0);
+
+    vec4.scale(lightingVector, lightingVector, 1);
+
+    const normal_matrix = mat4.create();
+    mat4.invert(normal_matrix, modelViewMatrix);
+    mat4.transpose(normal_matrix, normal_matrix);
+
     {
         const numComponents = 3; // pull out 2 values per iteration
         const type = gl.FLOAT; // the data in the buffer is 32bit floats
@@ -327,6 +361,24 @@ function drawScene(gl, program_info, buffers, dt) {
             program_info.attribLocations.vertexColor);
     }
 
+    {
+        const numComponents = 3;
+        const type = gl.FLOAT;
+        const normalize = false;
+        const stride = 0;
+        const offset = 0;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+        gl.vertexAttribPointer(
+            program_info.attribLocations.vertexNormal,
+            numComponents,
+            type,
+            normalize,
+            stride,
+            offset);
+        gl.enableVertexAttribArray(
+            program_info.attribLocations.vertexNormal);
+    }
+
 
     // Tell WebGL to use our program when drawing
 
@@ -342,6 +394,15 @@ function drawScene(gl, program_info, buffers, dt) {
         program_info.uniformLocations.modelViewMatrix,
         false,
         modelViewMatrix);
+    gl.uniform4fv(
+        program_info.uniformLocations.lightingVector,
+        lightingVector,
+    );
+    gl.uniformMatrix4fv(
+        program_info.uniformLocations.normalMatrix,
+        false,
+        normal_matrix,
+    )
 
     {
         const offset = 0;

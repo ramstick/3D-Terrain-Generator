@@ -1,7 +1,10 @@
-var rows = 180;
-var columns = 180;
+var rows = 100;
+var columns = 100;
 
-var triangle_width = 20 / rows;
+var map_width = 400;
+var map_height = 400;
+
+var triangle_width = map_width / rows;
 
 var num_points = rows * columns * 6;
 
@@ -9,10 +12,36 @@ var vertex_normals = [];
 var mesh_vertices = [];
 var vertex_colors = [];
 
-var shift_x = -10;
-var shift_y = -10;
+var shift_x = -map_width / 2;
+var shift_y = -map_height / 2;
 
 var terrain_map = new Array(rows + 1);
+
+var sea_level = 0.3;
+
+var lacunarity = 1;
+var persistance = 0.5;
+var octave = 20;
+var scale = 0.05;
+
+var regions = [0.5, 0.7, 1, 1.5, 2.4, 100000000000];
+var region_colors = [{ r: 0, g: 0, b: 1 }, { r: 0.96, g: 0.86, b: 0.32 }, { r: 0, g: 1, b: 0 }, { r: 0.09, g: 0.43, b: 0.08 }, { r: 0.74, g: 0.74, b: 0.74 }, { r: 1, g: 1, b: 1 }];
+
+
+var multiplier = 300;
+
+function region_multiplier_curve(x) {
+    if (x < 0.5) {
+        return 0;
+    } else if (x <= 1) {
+        return (1 / 20) * (x - 0.5);
+    } else if (x <= 1.5) {
+        return (0.025);
+    } else {
+        return 0.07 * (x - 1.5) ** 2 + 0.025;
+    }
+}
+
 
 function cross_product(v1, v2) {
 
@@ -38,7 +67,6 @@ function normalize_vector(v) {
 
 function generateTriangles() {
 
-    var count = 0;
 
     for (var column = 0; column < columns; column++) {
         for (var row = 0; row < rows; row++) {
@@ -49,6 +77,58 @@ function generateTriangles() {
             var point_C = { x: column * triangle_width + shift_x, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column] };
             var point_D = { x: column * triangle_width + shift_x + triangle_width, y: row * triangle_width + shift_y + triangle_width, z: terrain_map[row + 1][column + 1] };
 
+
+
+
+            for (var r = 0; r < regions.length; r++) {
+                if (point_A.z <= regions[r]) {
+                    point_A.region = r
+                    break;
+                }
+            }
+            for (var r = 0; r < regions.length; r++) {
+                if (point_B.z <= regions[r]) {
+                    point_B.region = r
+                    break;
+                }
+            }
+            for (var r = 0; r < regions.length; r++) {
+                if (point_C.z <= regions[r]) {
+                    point_C.region = r
+                    break;
+                }
+            }
+            for (var r = 0; r < regions.length; r++) {
+                if (point_D.z <= regions[r]) {
+                    point_D.region = r
+                    break;
+                }
+            }
+
+            var avg = (point_A.z + point_B.z + point_C.z + point_D.z) / 4;
+            var r = 0;
+            for (var i = 0; i < regions.length; i++) {
+                if (avg <= regions[i]) {
+                    r = i;
+                    break;
+                }
+            }
+
+            var t = region_colors[r];
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, 1.0);
+
+
+            point_A.z *= region_multiplier_curve(point_A.z) * multiplier;
+            point_B.z *= region_multiplier_curve(point_B.z) * multiplier;
+            point_C.z *= region_multiplier_curve(point_C.z) * multiplier;
+            point_D.z *= region_multiplier_curve(point_D.z) * multiplier;
+
+
             var vector_A_B = { x: point_B.x - point_A.x, y: point_B.y - point_A.y, z: point_B.z - point_A.z };
             var vector_A_C = { x: point_C.x - point_A.x, y: point_C.y - point_A.y, z: point_C.z - point_A.z };
 
@@ -58,6 +138,8 @@ function generateTriangles() {
             var vector_D_C = { x: point_C.x - point_D.x, y: point_C.y - point_D.y, z: point_C.z - point_D.z };
 
             var triangle_2_NORMAL = normalize_vector(cross_product(vector_D_C, vector_D_B));
+
+
 
 
             // Triangle 1
@@ -80,33 +162,6 @@ function generateTriangles() {
             vertex_normals.push(triangle_2_NORMAL.x, triangle_2_NORMAL.y, triangle_2_NORMAL.z);
             vertex_normals.push(triangle_2_NORMAL.x, triangle_2_NORMAL.y, triangle_2_NORMAL.z);
 
-            if ((point_A.z + point_B.z + point_C.z) / 3 > 0.6) {
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-            } else if ((point_A.z + point_B.z + point_C.z) / 3 > 0.1) {
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-            } else {
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-            }
-
-            if ((point_D.z + point_B.z + point_C.z) / 3 > 0.6) {
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-                vertex_colors.push(0.94, 0.94, 0.94, 1.0);
-            } else if ((point_D.z + point_B.z + point_C.z) / 3 > 0.1) {
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-                vertex_colors.push(0.73, 0.73, 0.73, 1.0);
-            } else {
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-                vertex_colors.push(0.58, 0.44, 0.08, 1.0);
-            }
 
         }
     }
@@ -120,28 +175,41 @@ function generateTerrain() {
     for (var i = 0; i < terrain_map.length; i++) {
 
         terrain_map[i] = new Array(columns + 1);
-
     }
 
-    var simplex = new SimplexNoise();
+    var simplex;
+    var offsets = new Array();
 
     for (var row = 0; row < terrain_map.length; row++) {
         for (var column = 0; column < terrain_map[row].length; column++) {
 
-            terrain_map[row][column] = simplex.noise2D(column * 0.1, row * 0.1) * 0.5;
+            terrain_map[row][column] = 0;
 
         }
     }
 
-    simplex = new SimplexNoise();
-
-    for (var row = 0; row < terrain_map.length; row++) {
-        for (var column = 0; column < terrain_map[row].length; column++) {
-
-            terrain_map[row][column] += simplex.noise2D(column * 0.005, row * 0.005) * 0.1;
-
-        }
+    for (var i = 0; i < octave; i++) {
+        offsets.push({ x: Math.random() * 100 - 50, y: Math.random() * 100 - 50 });
     }
+
+    var l = 1;
+    var p = 1;
+
+    for (var curr_octave = 0; curr_octave < octave; curr_octave++) {
+        simplex = new SimplexNoise();
+
+        for (var row = 0; row < terrain_map.length; row++) {
+            for (var column = 0; column < terrain_map[row].length; column++) {
+
+                terrain_map[row][column] += (simplex.noise2D((column / l + offsets[curr_octave].x) * scale, (row / l + offsets[curr_octave].y) * scale) + 0.5) * p;
+
+            }
+        }
+        l *= lacunarity;
+        p *= persistance;
+    }
+
+    console.log(terrain_map);
 
 }
 
@@ -208,7 +276,7 @@ var v_s_source = `
 
         highp vec4 transformedNormal = normalMatrix * vec4(a_nor.xyz, 1.0);
 
-        highp vec3 color = vec3(1.5,1.5,1.5);
+        highp vec3 color = vec3(1.0,1.0,1.0);
 
         highp float directional = max(dot(transformedNormal.xyz, directional_light.xyz), 0.2);
         lighting = color * directional + 0.3;
@@ -224,12 +292,16 @@ var f_s_source = `
     varying vec3 lighting;
 
     void main(){
-        gl_FragColor = vec4((v_col.xyz * lighting), 1.0);
+        gl_FragColor = vec4((v_col.xyz * lighting) * 0.7, 1.0);
     }
 
 `
 
 function main() {
+
+
+    loadRegionEditor();
+
     var canvas = document.getElementsByTagName("canvas")[0];
     var gl = canvas.getContext("webgl");
 
@@ -286,10 +358,10 @@ function drawScene(gl, program_info, buffers, dt) {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DATA_BUFFER_BIT);
 
-    const fieldOfView = 45 * Math.PI / 180; // in radians
+    const fieldOfView = 90 * Math.PI / 180; // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const zNear = 0.1;
-    const zFar = 100.0;
+    const zNear = 0.79;
+    const zFar = 1000.0;
     const projectionMatrix = mat4.create();
 
     // note: glmatrix.js always has the first argument
@@ -308,11 +380,11 @@ function drawScene(gl, program_info, buffers, dt) {
 
     mat4.translate(modelViewMatrix, // destination matrix
         modelViewMatrix, // matrix to translate
-        [-0.0, 0.0, -6.0]);
+        [-0.0, 0.0, -100.0]);
 
 
 
-    mat4.rotateX(modelViewMatrix, modelViewMatrix, -Math.PI / 4);
+    mat4.rotateX(modelViewMatrix, modelViewMatrix, -60 * Math.PI / 180);
     mat4.rotateZ(modelViewMatrix, modelViewMatrix, rot);
     rot += dt * 1;
 
@@ -440,4 +512,31 @@ function createProgram(gl, vertexShader, fragmentShader) {
     console.log("GAY ASS NIBBA!");
     console.log(gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function loadRegionEditor() {
+
+    var reg_editor = document.getElementById("region-editor");
+
+    for (var reg = 0; reg < regions.length; reg++) {
+
+        var li = document.createElement("LI");
+        li.innerHTML = regions[reg];
+        li.classList.add("region-item")
+        reg_editor.appendChild(li);
+
+    }
 }

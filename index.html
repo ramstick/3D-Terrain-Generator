@@ -8,13 +8,49 @@
     <script src="gl-mat.js"></script>
     <script src="simplex-noise.js"></script>
     <script src="script.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 
+    <style>
+        #control-board {
+            width: 300px;
+            height: 500px;
+            background-color: rgba(20, 20, 20, 0.7);
+            position: absolute;
+            color: white;
+            top: 5px;
+            left: 5px;
+        }
+        
+        body {
+            margin: 0;
+        }
+        
+        h3 {
+            text-align: center;
+        }
+        
+        #region-editor {
+            background-color: rgba(255, 255, 255, 0.7);
+            height: 100px;
+            width: 50px;
+            list-style: none;
+        }
+        
+        .region-item {
+            border: 5px, solid, black;
+        }
+    </style>
 
 </head>
 
 <body onload="main();">
-    <h1>3D Terrain Generator Thing</h1>
-    <canvas width="500px" height="500px"></canvas>
+    <canvas width="1000px" height="1000px"></canvas>
+    <div id="control-board">
+        <h3>3D Terrain Generator Thing</h3>
+        <ul id="region-editor" onload="loadRegionEditor()">
+            <li>Gay</li>
+        </ul>
+    </div>
 </body>
 
 </html>

@@ -1,8 +1,8 @@
-var rows = 100;
-var columns = 100;
+var rows = 800;
+var columns = 800;
 
-var map_width = 400;
-var map_height = 400;
+var map_width = 3200;
+var map_height = 3200;
 
 var triangle_width = map_width / rows;
 
@@ -19,13 +19,14 @@ var terrain_map = new Array(rows + 1);
 
 var sea_level = 0.3;
 
-var lacunarity = 1;
-var persistance = 0.5;
+var lacunarity = 2;
+var persistance = 0.1;
 var octave = 20;
-var scale = 0.05;
+var scale = 0.024;
+var amplitude = 1.5;
 
-var regions = [0.5, 0.7, 1, 1.5, 2.4, 100000000000];
-var region_colors = [{ r: 0, g: 0, b: 1 }, { r: 0.96, g: 0.86, b: 0.32 }, { r: 0, g: 1, b: 0 }, { r: 0.09, g: 0.43, b: 0.08 }, { r: 0.74, g: 0.74, b: 0.74 }, { r: 1, g: 1, b: 1 }];
+var regions = [0.7, 1, 1.3, 1.5, 2.2, 100000000000];
+var region_colors = [{ r: 0, g: 0, b: 1, a: 1 }, { r: 0.96, g: 0.86, b: 0.32, a: 1 }, { r: 0, g: 1, b: 0, a: 1 }, { r: 0.09, g: 0.43, b: 0.08, a: 1 }, { r: 0.74, g: 0.74, b: 0.74, a: 1 }, { r: 1, g: 1, b: 1, a: 1 }];
 
 
 var multiplier = 300;
@@ -36,9 +37,9 @@ function region_multiplier_curve(x) {
     } else if (x <= 1) {
         return (1 / 20) * (x - 0.5);
     } else if (x <= 1.5) {
-        return (0.025);
+        return (1 / 30) * (x - 1) + 0.025;
     } else {
-        return 0.07 * (x - 1.5) ** 2 + 0.025;
+        return (1 / 5) * (x - (13 / 9)) ** 2 + 0.0386;
     }
 }
 
@@ -115,12 +116,12 @@ function generateTriangles() {
             }
 
             var t = region_colors[r];
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
-            vertex_colors.push(t.r, t.g, t.b, 1.0);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
+            vertex_colors.push(t.r, t.g, t.b, t.a);
 
 
             point_A.z *= region_multiplier_curve(point_A.z) * multiplier;
@@ -201,7 +202,7 @@ function generateTerrain() {
         for (var row = 0; row < terrain_map.length; row++) {
             for (var column = 0; column < terrain_map[row].length; column++) {
 
-                terrain_map[row][column] += (simplex.noise2D((column / l + offsets[curr_octave].x) * scale, (row / l + offsets[curr_octave].y) * scale) + 0.5) * p;
+                terrain_map[row][column] += (simplex.noise2D((column / l + offsets[curr_octave].x) * scale, (row / l + offsets[curr_octave].y) * scale) + 0.5) * p * amplitude;
 
             }
         }
@@ -292,7 +293,7 @@ var f_s_source = `
     varying vec3 lighting;
 
     void main(){
-        gl_FragColor = vec4((v_col.xyz * lighting) * 0.7, 1.0);
+        gl_FragColor = v_col* vec4( lighting, 1.0);
     }
 
 `
@@ -351,7 +352,7 @@ function main() {
 var rot = 0;
 
 function drawScene(gl, program_info, buffers, dt) {
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    gl.clearColor(0.65, 0.96, 1.0, 1.0);
     gl.clearDepth(1.0);
     gl.enable(gl.DEPTH_TEST);
     gl.depthFunc(gl.LEQUAL);
@@ -361,7 +362,7 @@ function drawScene(gl, program_info, buffers, dt) {
     const fieldOfView = 90 * Math.PI / 180; // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.79;
-    const zFar = 1000.0;
+    const zFar = 10000.0;
     const projectionMatrix = mat4.create();
 
     // note: glmatrix.js always has the first argument
@@ -380,7 +381,7 @@ function drawScene(gl, program_info, buffers, dt) {
 
     mat4.translate(modelViewMatrix, // destination matrix
         modelViewMatrix, // matrix to translate
-        [-0.0, 0.0, -100.0]);
+        [-0.0, 0.0, -300.0]);
 
 
 

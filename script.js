@@ -1,8 +1,8 @@
-var rows = 800;
-var columns = 800;
+var rows = 200;
+var columns = 200;
 
-var map_width = 3200;
-var map_height = 3200;
+var map_width = 1600;
+var map_height = 1600;
 
 var triangle_width = map_width / rows;
 
@@ -22,12 +22,18 @@ var sea_level = 0.3;
 var lacunarity = 2;
 var persistance = 0.1;
 var octave = 20;
-var scale = 0.024;
+var scale = rows / map_height * 0.2;
 var amplitude = 1.5;
 
-var regions = [0.7, 1, 1.3, 1.5, 2.2, 100000000000];
-var region_colors = [{ r: 0, g: 0, b: 1, a: 1 }, { r: 0.96, g: 0.86, b: 0.32, a: 1 }, { r: 0, g: 1, b: 0, a: 1 }, { r: 0.09, g: 0.43, b: 0.08, a: 1 }, { r: 0.74, g: 0.74, b: 0.74, a: 1 }, { r: 1, g: 1, b: 1, a: 1 }];
+var regions = [
+    { h: 0.5, r: 0, g: 0, b: 1, a: 1, name: "Water" },
+    { h: 0.7, r: 1, g: 1, b: 0.15, a: 1, name: "Sand" },
+    { h: 1, r: 0, g: 0.78, b: 0, a: 1, name: "Grass1" },
+    { h: 1.5, r: 0.3, g: 0.65, b: 0.23, a: 1, name: "Grass2" },
+    { h: 2.2, r: 0.7, g: 0.7, b: 0.7, a: 1, name: "Rock" },
+    { h: 999, r: 1, g: 1, b: 1, a: 1, name: "Snow" }
 
+];
 
 var multiplier = 300;
 
@@ -82,25 +88,25 @@ function generateTriangles() {
 
 
             for (var r = 0; r < regions.length; r++) {
-                if (point_A.z <= regions[r]) {
+                if (point_A.z <= regions[r].h) {
                     point_A.region = r
                     break;
                 }
             }
             for (var r = 0; r < regions.length; r++) {
-                if (point_B.z <= regions[r]) {
+                if (point_B.z <= regions[r].h) {
                     point_B.region = r
                     break;
                 }
             }
             for (var r = 0; r < regions.length; r++) {
-                if (point_C.z <= regions[r]) {
+                if (point_C.z <= regions[r].h) {
                     point_C.region = r
                     break;
                 }
             }
             for (var r = 0; r < regions.length; r++) {
-                if (point_D.z <= regions[r]) {
+                if (point_D.z <= regions[r].h) {
                     point_D.region = r
                     break;
                 }
@@ -109,13 +115,13 @@ function generateTriangles() {
             var avg = (point_A.z + point_B.z + point_C.z + point_D.z) / 4;
             var r = 0;
             for (var i = 0; i < regions.length; i++) {
-                if (avg <= regions[i]) {
+                if (avg <= regions[i].h) {
                     r = i;
                     break;
                 }
             }
 
-            var t = region_colors[r];
+            var t = regions[r];
             vertex_colors.push(t.r, t.g, t.b, t.a);
             vertex_colors.push(t.r, t.g, t.b, t.a);
             vertex_colors.push(t.r, t.g, t.b, t.a);
@@ -293,7 +299,7 @@ var f_s_source = `
     varying vec3 lighting;
 
     void main(){
-        gl_FragColor = v_col* vec4( lighting, 1.0);
+        gl_FragColor = v_col* vec4(lighting, 1.0);
     }
 
 `
@@ -535,7 +541,7 @@ function loadRegionEditor() {
     for (var reg = 0; reg < regions.length; reg++) {
 
         var li = document.createElement("LI");
-        li.innerHTML = regions[reg];
+        li.innerHTML = regions[reg].name;
         li.classList.add("region-item")
         reg_editor.appendChild(li);
 
